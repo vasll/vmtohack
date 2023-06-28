@@ -1,0 +1,2 @@
+*.vm linguist-vendored
+sample_files/* linguist-vendored
