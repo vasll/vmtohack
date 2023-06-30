@@ -5,8 +5,9 @@ import (
 )
 
 func main() {
-	parser, _ := jackvmt.NewParser("sample_files/test.vm")
+	parser, _ := jackvmt.NewParser("../_sample_files/BasicTest.vm")
 	for parser.HasMoreCommands() {
 		parser.Advance()
+		// TODO
 	}
 }
