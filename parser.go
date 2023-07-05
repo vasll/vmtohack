@@ -3,6 +3,7 @@ package jackvmt
 import (
 	"bufio"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -55,10 +56,9 @@ func removeComments(s string) string{
 
 /* Creates a new Parser by opening an input file for reading */
 func NewParser(path string) (*Parser, error) {
+	// Open input file and check for errors
 	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
+	if err != nil { return nil, err }
 
 	scanner := bufio.NewScanner(file)
 	parser := &Parser{
@@ -79,20 +79,30 @@ func (p *Parser) Advance() {
 
 		fields := strings.Split(p.line, " ")	// Split command into its fields
 
-		// Check if command is arithmetic
-		if arrayContains(arithmeticSymbols, fields[0]) {
+		// Check command type
+		if arrayContains(arithmeticSymbols, fields[0]) {	// Arithmetic command
 			p.CommandType = C_Arithmetic
-			// TODO save the arithmetic operand somewhere
-		}
-		// Check if it's push
-		if arrayContains(arithmeticSymbols, "push") {
-			p.CommandType = C_Push
-			// TODO save params in Arg1, Arg2
-		}
-		// Check if it's pop
-		if arrayContains(arithmeticSymbols, "pop") {
-			p.CommandType = C_Pop
-			// TODO save params in Arg1, Arg2
+			p.Arg1 = "add"
+		}else if fields[0] == "push" {	// Push commnand [push segment number]
+			p.CommandType = C_Push	// push
+			p.Arg1 = fields[1]		// segment
+
+			number, err := strconv.Atoi(fields[2])
+			if err != nil {
+				// TODO handle conversion error
+				os.Exit(-1)
+			}
+			p.Arg2 = number			// number
+		}else if fields[0] == "pop" {	// Pop command [pop segment number]
+			p.CommandType = C_Pop	// pop
+			p.Arg1 = fields[1]		// segment
+
+			number, err := strconv.Atoi(fields[2])
+			if err != nil {
+				// TODO handle conversion error
+				os.Exit(-1)
+			}
+			p.Arg2 = number			// number
 		}
 
 		return
