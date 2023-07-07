@@ -28,12 +28,12 @@ var arithmeticSymbols []string = []string {
 
 /* VM Parser implementation from nand2tetris */
 type Parser struct {
-	file		*os.File
-	scanner 	*bufio.Scanner
-	line 		string
-	CommandType CommandType
-	Arg1		string
-	Arg2		int
+	file		*os.File		// Input file
+	scanner 	*bufio.Scanner	// Scanner of input file
+	line 		string			// Content of current line in textfile, uncommented
+	CommandType CommandType		// Current CommandType
+	Arg1		string			// Current Arg1 (if any)
+	Arg2		int				// Current Arg2 (if any)
 }
 
 const END_COMMANDS = "$END_COMMANDS$" // Signals the end of commands in the file
@@ -82,7 +82,7 @@ func (p *Parser) Advance() {
 		// Check command type
 		if arrayContains(arithmeticSymbols, fields[0]) {	// Arithmetic command
 			p.CommandType = C_Arithmetic
-			p.Arg1 = "add"
+			p.Arg1 = fields[0]
 		}else if fields[0] == "push" {	// Push commnand [push segment number]
 			p.CommandType = C_Push	// push
 			p.Arg1 = fields[1]		// segment

@@ -8,8 +8,10 @@ import (
 
 /* CodeWriter implementation from nand2tetris */
 type CodeWriter struct {
-	file 	*os.File
-	writer	*bufio.Writer
+	file 	*os.File		// Output file to be written to
+	writer	*bufio.Writer	// Output file writer
+	eqcount int				// Count of how many eq labels are there
+	ltcount int				// Count of how many lt labels are there
 }
 
 /* Creates a new CodeWriter by opening an output file to be written to */
@@ -19,15 +21,15 @@ func NewCodeWriter(path string) (*CodeWriter, error) {
 	if err != nil { return nil, err }
 
 	writer := bufio.NewWriter(file)
-	codeWriter := &CodeWriter{ file, writer }
+	codeWriter := &CodeWriter{ file, writer, 0, 0 }
 	
 	return codeWriter, codeWriter.initPointers()
 }
 
 /* Writes to the output file the assembly code that implements the given arithmetic command */
 func (cw *CodeWriter) WriteArithmetic(command string) error {
+	// The implementation of each command is in the _implementations folder
 	if command == "add" {
-		// from _implementations/add.asm
 		return cw.writeStringAndFlush("//add\n@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nM=D+M\n@SP\nM=M+1\n")
 	} else if command == "sub" {
 		// TODO implement
@@ -40,9 +42,21 @@ func (cw *CodeWriter) WriteArithmetic(command string) error {
 	} else if command == "not" {
 		// TODO implement
 	} else if command == "eq" {
-		// TODO implement
+		err := cw.writeStringAndFlush(fmt.Sprintf(
+			"//eq\n@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nM=D-M\nD=M\n@EQ_%d_T\nD;JEQ\n@SP\nA=M\nM=0\n"+
+			"@EQ_%d_END\n0;JMP\n(EQ_%d_T)\n@SP\nA=M\nM=-1\n@EQ_%d_END\n0;JMP\n(EQ_%d_END)\n@SP\nM=M+1\n",
+			cw.eqcount, cw.eqcount, cw.eqcount, cw.eqcount, cw.eqcount,
+		))
+		cw.eqcount++
+		return err
 	} else if command == "lt" {
-		// TODO implement
+		err := cw.writeStringAndFlush(fmt.Sprintf(
+			"@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nM=D-M\nD=M\n@LT_%d_T\nD;JGT\n@SP\nA=M\nM=0\n"+
+			"@LT_%d_END\n0;JMP\n(LT_%d_T)\n@SP\nA=M\nM=-1\n@LT_%d_END\n0;JMP\n(LT_%d_END)\n@SP\nM=M+1\n",
+			cw.ltcount, cw.ltcount, cw.ltcount, cw.ltcount, cw.ltcount,
+		))
+		cw.ltcount++
+		return err
 	} else if command == "gt" {
 		// TODO implement
 	}
