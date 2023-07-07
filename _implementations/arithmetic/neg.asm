@@ -1,0 +1,12 @@
+/* neg.asm - implementation of the "neg" vm command in Hack
+Pseudocode:
+stack[sp] = -stack[sp]
+sp++
+*/
+
+@SP
+M=M-1
+A=M
+D=-M
+@SP
+M=M+1

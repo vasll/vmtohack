@@ -12,6 +12,7 @@ type CodeWriter struct {
 	writer	*bufio.Writer	// Output file writer
 	eqcount int				// Count of how many eq labels are there
 	ltcount int				// Count of how many lt labels are there
+	gtcount	int				// Count of how many gt labels are there
 }
 
 /* Creates a new CodeWriter by opening an output file to be written to */
@@ -21,7 +22,7 @@ func NewCodeWriter(path string) (*CodeWriter, error) {
 	if err != nil { return nil, err }
 
 	writer := bufio.NewWriter(file)
-	codeWriter := &CodeWriter{ file, writer, 0, 0 }
+	codeWriter := &CodeWriter{ file, writer, 0, 0, 0}
 	
 	return codeWriter, codeWriter.initPointers()
 }
@@ -32,15 +33,15 @@ func (cw *CodeWriter) WriteArithmetic(command string) error {
 	if command == "add" {
 		return cw.writeStringAndFlush("//add\n@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nM=D+M\n@SP\nM=M+1\n")
 	} else if command == "sub" {
-		// TODO implement
+		return cw.writeStringAndFlush("//sub\n@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nM=M-D\n@SP\nM=M+1\n")
 	} else if command == "neg" {
-		// TODO implement
+		return cw.writeStringAndFlush("//neg\n@SP\nM=M-1\nA=M\nM=-M\n@SP\nM=M+1\n")
 	} else if command == "and" {
-		// TODO implement
+		return cw.writeStringAndFlush("//and\n@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nM=M&D\n@SP\nM=M+1\n")
 	} else if command == "or" {
-		// TODO implement
+		return cw.writeStringAndFlush("//or\n@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nM=M|D\n@SP\nM=M+1\n")
 	} else if command == "not" {
-		// TODO implement
+		return cw.writeStringAndFlush("//not\n@SP\nM=M-1\nA=M\nM=!M\n@SP\nM=M+1\n")
 	} else if command == "eq" {
 		err := cw.writeStringAndFlush(fmt.Sprintf(
 			"//eq\n@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nM=D-M\nD=M\n@EQ_%d_T\nD;JEQ\n@SP\nA=M\nM=0\n"+
@@ -58,7 +59,13 @@ func (cw *CodeWriter) WriteArithmetic(command string) error {
 		cw.ltcount++
 		return err
 	} else if command == "gt" {
-		// TODO implement
+		err := cw.writeStringAndFlush(fmt.Sprintf(
+			"@SP\nM=M-1\nA=M\nD=M\n@SP\nM=M-1\nA=M\nM=D-M\nD=M\n@GT_%d_T\nD;JLT\n@SP\nA=M\nM=0\n"+
+			"@GT_%d_END\n0;JMP\n(GT_%d_T)\n@SP\nA=M\nM=-1\n@GT_%d_END\n0;JMP\n(GT_%d_END)\n@SP\nM=M+1\n",
+			cw.gtcount, cw.gtcount, cw.gtcount, cw.gtcount, cw.gtcount,
+		))
+		cw.gtcount++
+		return err
 	}
 
 	return fmt.Errorf("Arithmetic command '%s' not found", command)

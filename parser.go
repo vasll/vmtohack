@@ -23,7 +23,7 @@ const (
 
 /* List of arithmetic symbols */
 var arithmeticSymbols []string = []string {
-	"add", "sub", "net", "eq", "gt", "lt", "and", "or", "not",
+	"add", "sub", "neg", "eq", "gt", "lt", "and", "or", "not",
 }
 
 /* VM Parser implementation from nand2tetris */
