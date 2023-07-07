@@ -5,6 +5,7 @@ if(stack[sp]-stack[sp-1]==0) {
 } else {
     stack[sp-1] = 0  // Equal is false
 }
+sp++
 */
 
 @SP
@@ -34,3 +35,5 @@ M=0
     0;JMP
 
 (EQ_0_END)  // End of eq comparison
+@SP
+M=M+1
