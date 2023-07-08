@@ -68,36 +68,72 @@ func (cw *CodeWriter) WriteArithmetic(command string) error {
 		return err
 	}
 
-	return fmt.Errorf("Arithmetic command '%s' not found", command)
+	return fmt.Errorf("arithmetic command '%s' not found", command)
 }
 
 /* Writes to the output file the assembly code that implements the given push command */
 func (cw *CodeWriter) WritePush(segment string, index int) error {
-	// from _implementations/push.asm
-	return cw.writeStringAndFlush(
-		fmt.Sprintf("//push %s %d\n@%d\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", segment, index, index),
-	)
-}
+	if segment == "constant" {
+		return cw.writeStringAndFlush(fmt.Sprintf(
+			"//push %s %d\n@%d\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", segment, index, index,
+		))
+	} else if segment == "local" || segment == "argument" || segment == "this" || segment == "that" {
+		// TODO implement (not working)
+		spname := getPointerNameFromSegment(segment) 	// SegmentPointer name like LCL, ARG, THIS, THAT
+		return cw.writeStringAndFlush(fmt.Sprintf(
+			"//push %s %d\n@%s\nD=M\n\n@%d\nA=D+A\nD=M\n\n@SP\nA=M\nM=D\n\n@SP\nM=M+1\n", segment, index, spname, index,
+		))
+	} else if segment == "temp" {
+		// TODO implement
+	}
 
-/* Writes to he output file the assembly code that implements the given pop command */
-func (cw *CodeWriter) WritePop(segment string, index int) error {
-	// TODO implement
 	return nil
 }
 
-/* Initialises the SP at RAM[0] with value 256 */
+/* Writes to the output file the assembly code that implements the given pop command */
+func (cw *CodeWriter) WritePop(segment string, index int) error {
+	if segment == "local" || segment == "argument" || segment == "this" || segment == "that" {
+		// TODO implement (not working)
+		spname := getPointerNameFromSegment(segment) 	// SegmentPointer name like LCL, ARG, THIS, THAT
+		return cw.writeStringAndFlush(fmt.Sprintf(
+			"//pop %s %d\n@%s\nD=M\n@%d\nD=D+A\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D\n", segment, index, spname, index,
+		))
+	} else if segment == "temp" {
+		// TODO implement
+	}
+
+	return nil
+}
+
+/* Initialises the required pointers */
 func (cw *CodeWriter) initPointers() error {
-	// TODO implement all the other pointers like LCL, ARG, THIS etc...
-	return cw.writeStringAndFlush("//@SP = 256\n@256\nD=A\n@SP\nM=D\n")
+	// TODO these pointers are here just for testing with BasicTest.vm
+	return cw.writeStringAndFlush(
+		"//init pointers\n@256\nD=A\n@SP\nM=D\n@300\nD=A\n@LCL\nM=D\n@400\nD=A\n@ARG\nM=D\n@3000\nD=A\n@THIS\nM=D\n@3010\nD=A\n@THAT\nM=D\n",
+	)
 }
 
 /* Writes a string to a *CodeWriter.writer and flushes it */
 func (cw *CodeWriter) writeStringAndFlush(s string) error {
 	_, err := cw.writer.WriteString(s)	
 	if err != nil { return err }
-	err = cw.writer.Flush()
+	err = cw.writer.Flush() 
 	if err != nil { return err }
 	return nil
+}
+
+/* Returns the pointer name from a string. Example: "local" -> "LCL" */
+func getPointerNameFromSegment(s string) string {
+	if s == "local" {
+		return "LCL"
+	} else if s == "argument" {
+		return "ARG"
+	} else if s == "this" {
+		return "THIS"
+	} else if s == "that" {
+		return "THAT"
+	}
+	return "[SEGMENT_NOT_FOUND]"
 }
 
 /* Closes the output file */
