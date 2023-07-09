@@ -1,23 +1,23 @@
 /* pop/local_argument_this_that.asm - implementation of the "pop local/argument/this/that i" vm command in Hack
-
-Pseudocode:
-R13 = SEG+i     // get address of SEG+i where SEG is either local, argument, this or that
-D = pop()       // get last value from stack
-*R13 =  D  
+Explanation:
+Pop latest item from stack
+@SP--
+Put the popped item into *@SEGMENT+i
 */
 
-@LCL
+// R13 = @SEGMENT+i
+@SEGMENT
 D=M
-@%d
+@i
 D=D+A
 @R13
-M=D   
-
+M=D
+// D = stack[SP-1]
 @SP
-AM=M-1
+M=M-1
+A=M
 D=M
-
+// *@R13 = D
 @R13
 A=M
 M=D
-

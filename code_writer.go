@@ -6,6 +6,13 @@ import (
 	"bufio"
 )
 
+// TODO: List of optimizations that can be made
+// 1. In WritePop and WritePush, on the 'local', 'argument', 'this', 'that' branch, if index is 0
+//    there is no need to calculate address of @SEGMENT+index because it's simply @SEGMENT.
+//    Same applies for the 'temp' branch
+// 2. Add index limits for segments, for example index of 'segment temp' shouldn't go over 8
+// 3. Add comments to be optional into final output .asm file
+
 /* CodeWriter implementation from nand2tetris */
 type CodeWriter struct {
 	file 	*os.File		// Output file to be written to
@@ -78,13 +85,14 @@ func (cw *CodeWriter) WritePush(segment string, index int) error {
 			"//push %s %d\n@%d\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", segment, index, index,
 		))
 	} else if segment == "local" || segment == "argument" || segment == "this" || segment == "that" {
-		// TODO implement (not working)
 		spname := getPointerNameFromSegment(segment) 	// SegmentPointer name like LCL, ARG, THIS, THAT
 		return cw.writeStringAndFlush(fmt.Sprintf(
-			"//push %s %d\n@%s\nD=M\n\n@%d\nA=D+A\nD=M\n\n@SP\nA=M\nM=D\n\n@SP\nM=M+1\n", segment, index, spname, index,
+			"//push %s %d\n@%s\nD=M\n@%d\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", segment, index, spname, index,
 		))
 	} else if segment == "temp" {
-		// TODO implement
+		return cw.writeStringAndFlush(fmt.Sprintf(
+			"//push temp %d\n@5\nD=M\n@%d\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", index, index,
+		))
 	}
 
 	return nil
@@ -93,13 +101,14 @@ func (cw *CodeWriter) WritePush(segment string, index int) error {
 /* Writes to the output file the assembly code that implements the given pop command */
 func (cw *CodeWriter) WritePop(segment string, index int) error {
 	if segment == "local" || segment == "argument" || segment == "this" || segment == "that" {
-		// TODO implement (not working)
 		spname := getPointerNameFromSegment(segment) 	// SegmentPointer name like LCL, ARG, THIS, THAT
 		return cw.writeStringAndFlush(fmt.Sprintf(
-			"//pop %s %d\n@%s\nD=M\n@%d\nD=D+A\n@R13\nM=D\n@SP\nAM=M-1\nD=M\n@R13\nA=M\nM=D\n", segment, index, spname, index,
+			"//pop %s %d\n@%s\nD=M\n@%d\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\nA=M\nD=M\n@R13\nA=M\nM=D\n", segment, index, spname, index,
 		))
 	} else if segment == "temp" {
-		// TODO implement
+		return cw.writeStringAndFlush(fmt.Sprintf(
+			"//pop temp %d\n@5\nD=M\n@%d\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\nA=M\nD=M\n@R13\nA=M\nM=D\n", index, index,
+		))
 	}
 
 	return nil
@@ -107,7 +116,7 @@ func (cw *CodeWriter) WritePop(segment string, index int) error {
 
 /* Initialises the required pointers */
 func (cw *CodeWriter) initPointers() error {
-	// TODO these pointers are here just for testing with BasicTest.vm
+	// TODO these pointers are here just for comparison with the output of BasicTest.vm
 	return cw.writeStringAndFlush(
 		"//init pointers\n@256\nD=A\n@SP\nM=D\n@300\nD=A\n@LCL\nM=D\n@400\nD=A\n@ARG\nM=D\n@3000\nD=A\n@THIS\nM=D\n@3010\nD=A\n@THAT\nM=D\n",
 	)

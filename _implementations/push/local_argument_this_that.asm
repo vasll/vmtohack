@@ -1,24 +1,23 @@
-/* pop/local_argument_this_that.asm - implementation of the "push local/argument/this/that i" vm command in Hack
-
-Pseudocode:
-Go to address LCL + i
-Store M into D
-Go to @SP
-Store D into SP
-SP++
+/* push/local_argument_this_that.asm - implementation of the "push local/argument/this/that i" vm command in Hack
+Explanation:
+Get item at address @SEGMENT+i
+Push item onto the stack
+@SP++
 */
 
-
-@LCL
-D=M     // Store the value in LCL in D
-
-@%d      // i
-A=D+A   // A=LCL+i
-D=M     // Store the value at LCL+i in D
-
+// D = *@SEGMENT+i
+@SEGMENT
+D=M
+@i
+A=D+A
+D=M
+// *@SP = M 
 @SP
-A=M     // Set A to the stack pointer
-M=D     // Store the value from D at the stack pointer address
-
+A=M
+M=D
+// @SP++
 @SP
-M=M+1   // Increment the stack pointer
+M=M+1
+
+
+
