@@ -1,16 +1,20 @@
 package jackvmt
 
 import (
+	"bufio"
 	"fmt"
 	"os"
-	"bufio"
+	"path/filepath"
 )
 
 // TODO: List of optimizations that can be made
 // 1. In WritePop and WritePush, on the 'local', 'argument', 'this', 'that' branch, if index is 0
 //    there is no need to calculate address of @SEGMENT+index because it's simply @SEGMENT.
 //    Same applies for the 'temp' branch
-// 2. Add index limits for segments, for example index of 'segment temp' shouldn't go over 8
+// 2. Add index limits for segments:
+//    'temp' <= 8
+//	  'pointer' <= 1
+//    ...
 // 3. Add comments to be optional into final output .asm file
 
 /* CodeWriter implementation from nand2tetris */
@@ -81,17 +85,30 @@ func (cw *CodeWriter) WriteArithmetic(command string) error {
 /* Writes to the output file the assembly code that implements the given push command */
 func (cw *CodeWriter) WritePush(segment string, index int) error {
 	if segment == "constant" {
+		// TODO check if index is out of bounds
 		return cw.writeStringAndFlush(fmt.Sprintf(
 			"//push %s %d\n@%d\nD=A\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", segment, index, index,
 		))
 	} else if segment == "local" || segment == "argument" || segment == "this" || segment == "that" {
+		// TODO check if index is out of bounds
 		spname := getPointerNameFromSegment(segment) 	// SegmentPointer name like LCL, ARG, THIS, THAT
 		return cw.writeStringAndFlush(fmt.Sprintf(
 			"//push %s %d\n@%s\nD=M\n@%d\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", segment, index, spname, index,
 		))
 	} else if segment == "temp" {
+		// TODO check if index is out of bounds
 		return cw.writeStringAndFlush(fmt.Sprintf(
 			"//push temp %d\n@5\nD=M\n@%d\nA=D+A\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", index, index,
+		))
+	} else if segment == "pointer" {
+		// TODO check if index is out of bounds
+		return cw.writeStringAndFlush(fmt.Sprintf(
+			"//push pointer %d\n@%d\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", index, (3+index),
+		))
+	} else if segment == "static" {
+		// TODO check if index is out of bounds
+		return cw.writeStringAndFlush(fmt.Sprintf(
+			"//push static %d\n@%s.%d\nD=M\n@SP\nA=M\nM=D\n@SP\nM=M+1\n", index, getRawFileName(cw.file.Name()), index,
 		))
 	}
 
@@ -101,13 +118,25 @@ func (cw *CodeWriter) WritePush(segment string, index int) error {
 /* Writes to the output file the assembly code that implements the given pop command */
 func (cw *CodeWriter) WritePop(segment string, index int) error {
 	if segment == "local" || segment == "argument" || segment == "this" || segment == "that" {
+		// TODO check if index is out of bounds
 		spname := getPointerNameFromSegment(segment) 	// SegmentPointer name like LCL, ARG, THIS, THAT
 		return cw.writeStringAndFlush(fmt.Sprintf(
 			"//pop %s %d\n@%s\nD=M\n@%d\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\nA=M\nD=M\n@R13\nA=M\nM=D\n", segment, index, spname, index,
 		))
 	} else if segment == "temp" {
+		// TODO check if index is out of bounds
 		return cw.writeStringAndFlush(fmt.Sprintf(
 			"//pop temp %d\n@5\nD=M\n@%d\nD=D+A\n@R13\nM=D\n@SP\nM=M-1\nA=M\nD=M\n@R13\nA=M\nM=D\n", index, index,
+		))
+	} else if segment == "pointer" {
+		// TODO check if index is out of bounds
+		return cw.writeStringAndFlush(fmt.Sprintf(
+			"//pop pointer %d\n@SP\nM=M-1\nA=M\nD=M\n@%d\nM=D\n", index, (3+index),
+		))
+	} else if segment == "static" {
+		// TODO check if index is out of bounds
+		return cw.writeStringAndFlush(fmt.Sprintf(
+			"//pop static %d\n@SP\nM=M-1\nA=M\nD=M\n@%s.%d\nM=D\n", index, getRawFileName(cw.file.Name()), index,
 		))
 	}
 
@@ -116,9 +145,9 @@ func (cw *CodeWriter) WritePop(segment string, index int) error {
 
 /* Initialises the required pointers */
 func (cw *CodeWriter) initPointers() error {
-	// TODO these pointers are here just for comparison with the output of BasicTest.vm
+	// TODO pointer allocation
 	return cw.writeStringAndFlush(
-		"//init pointers\n@256\nD=A\n@SP\nM=D\n@300\nD=A\n@LCL\nM=D\n@400\nD=A\n@ARG\nM=D\n@3000\nD=A\n@THIS\nM=D\n@3010\nD=A\n@THAT\nM=D\n",
+		"//init pointers\n@256\nD=A\n@SP\nM=D\n",
 	)
 }
 
@@ -143,6 +172,13 @@ func getPointerNameFromSegment(s string) string {
 		return "THAT"
 	}
 	return "[SEGMENT_NOT_FOUND]"
+}
+
+/* Returns the filename from a path without any extensions */
+func getRawFileName(path string) string {
+	filename := filepath.Base(path)
+	extension := filepath.Ext(filename)
+	return filename[0: len(filename) - len(extension)]
 }
 
 /* Closes the output file */
