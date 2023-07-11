@@ -6,17 +6,15 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
 	"github.com/docopt/docopt.go"
-	"github.com/vasll/jackvmt"
+	"github.com/vasll/vmtohack"
 )
 
 /* Docopt args usage */
-// TODO make <outfile> param default as simply the input <file> with an .asm extension instead of the given one
 const usage = `
 Usage: 
-  jackvmt <file> [<outfile>]
-  jackvmt -h | --help
+  vmtohack <file> [<outfile>]
+  vmtohack -h | --help
 
 Options:
   file        path of the input .vm file
@@ -31,29 +29,28 @@ func main() {
 
 	// Create Parser and CodeWriter from input/output files
 	infile := args["<file>"].(string)
-	parser, err := jackvmt.NewParser(infile)
+	parser, err := vmtohack.NewParser(infile)
 	if err != nil { 
 		fmt.Println("Error with input file")
 		os.Exit(-1)
 	}
-
 	// If output file is not given, make it by adding a .asm extension to the original file name
 	outfile := ""
 	if args["<outfile>"] == nil {
 		outfile = replaceExtension(infile, ".asm")
 	}
-	codeWriter, err := jackvmt.NewCodeWriter(outfile)
+	codeWriter, err := vmtohack.NewCodeWriter(outfile)
 	if err != nil { 
 		fmt.Println("Error with output file")
 		os.Exit(-1)
 	}
 
 	for parser.HasMoreCommands() {
-		if parser.CommandType == jackvmt.C_Arithmetic {
+		if parser.CommandType == vmtohack.C_Arithmetic {
 			codeWriter.WriteArithmetic(parser.Arg1)
-		} else if parser.CommandType == jackvmt.C_Push {
+		} else if parser.CommandType == vmtohack.C_Push {
 			codeWriter.WritePush(parser.Arg1, parser.Arg2)
-		} else if parser.CommandType == jackvmt.C_Pop {
+		} else if parser.CommandType == vmtohack.C_Pop {
 			codeWriter.WritePop(parser.Arg1, parser.Arg2)
 		}
 		parser.Advance()

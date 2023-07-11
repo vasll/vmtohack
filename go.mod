@@ -1,4 +1,4 @@
-module github.com/vasll/jackvmt
+module github.com/vasll/vmtohack
 
 go 1.20
 

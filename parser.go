@@ -1,4 +1,4 @@
-package jackvmt
+package vmtohack
 
 import (
 	"bufio"
